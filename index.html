@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verify the Fix</title>
+<meta name="description" content="Verify the fix: a concept for Interfere by Avto Grigolia.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap">
+<style>
+/* Layout: Interfere app shell, tokens lifted from interfere.com/docs (Mintlify theme). Sidebar 240px rows on the page ground, working pane is the #111 rounded panel. Dark-only to match the product; the customer's light app is nested inside replays and previews. */
+@font-face{font-family:"Paper Mono";font-weight:400;font-style:normal;font-display:swap;src:url("fonts/PaperMono-Regular.woff2") format("woff2")}
+@font-face{font-family:"Paper Mono";font-weight:500;font-style:normal;font-display:swap;src:url("fonts/PaperMono-Medium.woff2") format("woff2")}
+:root{
+  color-scheme: dark;
+  /* neutral scale, exactly as defined in their docs theme */
+  --g50:#f3f3f3; --g100:#eeeeee; --g200:#dfdfdf; --g300:#cecece; --g400:#9f9f9f; --g500:#707070; --g600:#505050; --g700:#3f3f3f; --g800:#262626; --g900:#171717; --g950:#0b0b0b;
+  --bg:#09090b;                         /* page ground */
+  --panel:#111111;                      /* background-dark */
+  --raise:#171717;                      /* gray-900 */
+  --raise-2:#1d1d1d;
+  --line:rgba(255,255,255,.07);         /* dark:border-white/[0.07] */
+  --line-2:rgba(255,255,255,.12);
+  --ring:rgba(112,112,112,.30);         /* search ring */
+  --frame:rgba(38,38,38,.25);           /* .frame bg-gray-800/25 */
+  --hover:rgba(223,223,223,.05);        /* hover:bg-gray-200/5 */
+  --active:rgba(238,238,238,.10);       /* bg-primary-light/10 */
+  --fg:#eeeeee; --fg-strong:#ffffff; --fg-head:#dfdfdf; --fg-2:#9f9f9f; --fg-3:#707070;
+  /* semantic pairs from their badge component (dark) */
+  --ok:#6ae1a1;   --ok-soft:rgba(22,163,74,.20);   --ok-line:rgba(38,189,108,.30);
+  --bad:#f08b85;  --bad-soft:rgba(220,38,38,.20);  --bad-line:rgba(230,72,61,.35);
+  --rec:#fde047;  --rec-soft:rgba(202,138,4,.22);  --rec-line:rgba(253,224,71,.28);
+  --accent:#b78af0; --accent-soft:rgba(147,51,234,.20);
+  --blue:#7196f4;
+  /* the customer's app (Resonance) stays light */
+  --m-bg:#fbfaf7; --m-panel:#ffffff; --m-fg:#1d1c1a; --m-mute:#8b8880; --m-line:#e8e5df;
+  --sans:"Inter","InterVariable",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"Paper Mono",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  --r:12px; --r-lg:16px;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg-2);font-family:var(--sans);font-feature-settings:"ss03";font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased;overflow:hidden}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0;font-feature-settings:inherit}
+button:focus-visible,a:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px}
+kbd{font-family:var(--sans);font-size:11px;font-weight:600;color:rgba(255,255,255,.5);border:1px solid var(--line-2);border-radius:5px;padding:0 4px;line-height:16px;display:inline-block;min-width:17px;text-align:center}
+.mono{font-family:var(--mono)}
+.tab{font-variant-numeric:tabular-nums}
+.fi{width:16px;height:16px;flex:none;display:block}
+
+.app{display:grid;grid-template-columns:256px minmax(0,1fr);height:100%;padding:8px max(8px,env(safe-area-inset-right,0px)) 8px max(8px,env(safe-area-inset-left,0px));gap:8px}
+
+/* sidebar: rows match the docs nav (14/20, 12px radius, 6 12 6 16) */
+.side{display:flex;flex-direction:column;min-height:0;padding:0 8px 4px;overflow:auto;scrollbar-width:none}
+.side::-webkit-scrollbar{display:none}
+.side > *{flex-shrink:0}
+.ws{display:flex;align-items:center;gap:10px;height:44px;margin-top:2px;padding:0 8px 0 14px;font-weight:500;font-size:14px;color:var(--fg-head)}
+.ws-logo{width:20px;height:20px;border-radius:6px;background:var(--g100);color:var(--g950);display:grid;place-items:center;font-size:11px;font-weight:700}
+.ws svg{color:var(--fg-3);width:12px;height:12px}
+.qa{display:flex;align-items:center;gap:8px;height:36px;margin:2px 0 14px;padding:0 12px 0 14px;border-radius:var(--r);background:#131313;box-shadow:0 0 0 1px var(--ring);color:rgba(255,255,255,.5);font-size:14px;cursor:pointer}
+.qa:hover{background:#161616}
+.qa span{flex:1}
+.qa .k{flex:none;font-size:12px;font-weight:600;color:rgba(255,255,255,.5)}
+.nav,.prob{display:flex;align-items:center;gap:12px;padding:6px 12px 6px 16px;border-radius:var(--r);color:var(--fg-2);text-align:left;width:100%;font-size:14px;line-height:20px;white-space:nowrap}
+.nav:hover,.prob:hover{background:var(--hover);color:var(--g300)}
+.nav.on,.prob.on{background:var(--active);color:var(--g100);text-shadow:-.2px 0 0 currentColor,.2px 0 0 currentColor}
+.nav .fi{opacity:.9}
+.prob span{overflow:hidden;text-overflow:ellipsis}
+.side-h{display:flex;align-items:center;padding:0 0 0 16px;margin:24px 0 10px;font-size:14px;line-height:20px;font-weight:500;color:var(--fg-head)}
+.side-h .n{margin-left:auto;margin-right:12px;font-size:12px;color:var(--fg-3);font-weight:400}
+.side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 8px 6px 16px}
+.av{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:600;flex:none}
+.av.j{background:#16243f;color:#93c5fd}
+.av.s{background:#2d1747;color:#d8b4fe}
+.who{min-width:0;line-height:1.3;font-size:13px}
+.who b{font-weight:500;display:block;color:var(--fg-head)}
+.who small{color:var(--fg-3);font-size:12px}
+
+/* main panel: docs content panel */
+.main{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.bar{display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border-bottom:1px solid var(--line);height:52px;flex:none}
+.bar .fi{color:var(--fg-3)}
+.crumbs{display:flex;align-items:center;gap:6px;min-width:0;flex:1;color:var(--fg-2);white-space:nowrap;overflow:hidden;font-size:14px}
+.crumbs svg{color:var(--fg-3)}
+.crumbs b{color:var(--g200);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.crumbs button:hover{color:var(--g300)}
+.bar-actions{display:flex;gap:6px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:var(--r);border:1px solid var(--line);background:var(--panel);color:var(--g300);font-weight:500;font-size:13.5px;white-space:nowrap}
+.btn:hover{background:var(--g900);color:var(--g100)}
+.btn.primary,.btn.ok{background:var(--g100);border-color:var(--g100);color:var(--g950)}
+.btn.primary:hover,.btn.ok:hover{background:#fff;color:#000}
+.btn.ghost{background:none;border-color:transparent}
+.btn.ghost:hover{background:var(--hover)}
+.btn kbd{color:inherit;opacity:.55;border-color:currentColor}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.seg{display:flex;padding:2px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line);gap:2px}
+.seg span{padding:4px 10px;border-radius:8px;color:var(--fg-3);font-size:13px}
+.seg span.on{background:var(--active);color:var(--g100)}
+.content{flex:1;overflow:auto;min-height:0}
+
+/* board: columns use the docs .frame treatment */
+.board{display:grid;grid-template-columns:repeat(3,minmax(270px,1fr));gap:10px;padding:14px;min-width:min-content}
+.col{background:var(--frame);border-radius:var(--r-lg);padding:8px;display:flex;flex-direction:column;gap:8px;min-height:420px}
+.col.verify{box-shadow:inset 0 0 0 1px var(--ok-line);background:linear-gradient(rgba(22,163,74,.10),transparent 160px),var(--frame)}
+.col-h{display:flex;align-items:center;gap:8px;padding:6px 8px 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);font-weight:500}
+.col-h .n{background:var(--g800);border-radius:5px;padding:0 6px;color:var(--fg-2);font-size:11px;letter-spacing:0}
+.new-tag{font-size:10px;letter-spacing:.04em;color:var(--ok);background:var(--ok-soft);border-radius:6px;padding:1px 6px;text-transform:uppercase}
+.col-h .n{margin-left:auto}
+.card{background:var(--raise);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px 12px;text-align:left;display:flex;flex-direction:column;gap:8px;width:100%}
+.card:hover{background:#1b1b1b;border-color:var(--line-2)}
+.card.live{border-color:var(--ok-line)}
+.card-id{display:flex;justify-content:space-between;align-items:center;color:var(--fg-3);font-family:var(--mono);font-size:11.5px}
+.card-t{display:flex;gap:9px;font-weight:500;line-height:1.4;color:var(--g100);font-size:14px}
+.card-t svg{flex:none;margin-top:2px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:18px;color:var(--fg-2);background:var(--g900);box-shadow:inset 0 0 0 1px var(--line);border-radius:8px;padding:1px 7px;white-space:nowrap}
+.chip svg{opacity:.8}
+.chip.ok{color:var(--ok);background:var(--ok-soft);box-shadow:none}
+.chip.bad{color:var(--bad);background:var(--bad-soft);box-shadow:none}
+.chip.rec{color:var(--rec);background:var(--rec-soft);box-shadow:none}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.col-empty{color:var(--fg-3);font-size:13px;padding:8px 8px;line-height:1.5}
+
+/* problem view */
+.prob-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);min-height:100%}
+.prob-l{padding:28px 28px 32px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:22px;min-width:0}
+.prob-r{padding:14px 24px 32px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.bug-badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--bad-soft);color:var(--bad)}
+.h1{font-size:26px;line-height:1.25;font-weight:600;letter-spacing:-.025em;color:var(--fg-head);text-wrap:balance;margin:0}
+.lede{color:var(--fg-2);max-width:62ch;margin:0;font-size:16px;line-height:26px}
+.props{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px 12px;font-size:14px;margin:0}
+.props dt{color:var(--fg-3)}
+.props dd{margin:0;display:flex;align-items:center;gap:7px;min-width:0;color:var(--g200)}
+.impact{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.impact div{background:var(--frame);border-radius:var(--r);padding:10px 12px}
+.impact small{display:block;color:var(--fg-3);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.impact b{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em;color:var(--fg-head);font-variant-numeric:tabular-nums}
+.sec-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg-3);font-weight:500;display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.sec-h .hint{margin-left:auto;text-transform:none;letter-spacing:0;font-size:12px}
+
+.tabs{display:flex;gap:2px;align-items:center;padding:2px 0}
+.tabs span{padding:5px 11px;border-radius:10px;color:var(--fg-2);font-weight:500}
+.tabs span.on{background:var(--active);color:var(--g100)}
+.tabs .cm{margin-left:auto;color:var(--fg-3)}
+
+.tl{display:flex;flex-direction:column;position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:1px;background:var(--line-2)}
+.tl-i{position:relative;padding:4px 0 18px}
+.tl-i::before{content:"";position:absolute;left:-19px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--g600);box-shadow:0 0 0 3px var(--panel)}
+.tl-i.ok::before{background:var(--ok)}
+.tl-i.wait::before{background:var(--ok);animation:pulse 1.6s infinite}
+.tl-i.bad::before{background:var(--bad)}
+.tl-i.rec::before{background:var(--rec)}
+.tl-h{display:flex;align-items:baseline;gap:8px;color:var(--fg-2);font-size:14px;flex-wrap:wrap}
+.tl-h b{color:var(--g100);font-weight:500}
+.tl-h time{color:var(--fg-3);font-size:12.5px}
+.tl-p{color:var(--fg-2);margin:4px 0 0;max-width:68ch}
+.box{background:var(--frame);border-radius:var(--r);padding:13px 14px;margin-top:8px}
+.box p{margin:0;color:var(--g200);max-width:68ch}
+.disclose{display:flex;align-items:center;gap:7px;margin-top:10px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.035);width:100%;color:var(--fg-2);text-align:left}
+.disclose:hover{color:var(--g300);background:rgba(255,255,255,.05)}
+.disclose svg{transition:transform .15s}
+.disclose[aria-expanded="true"] svg{transform:rotate(90deg)}
+.fixcard{box-shadow:inset 0 0 0 1px var(--ok-line);background:linear-gradient(135deg,rgba(22,163,74,.12),transparent 70%),var(--raise);border-radius:var(--r-lg);padding:14px;margin-top:10px;display:flex;flex-direction:column;gap:11px}
+.fixcard-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fixcard-top b{font-weight:500;color:var(--g100)}
+.fixcard .url{font-family:var(--mono);font-size:12px;color:var(--fg-2);background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);border-radius:8px;padding:5px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fixcard-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fixcard-row .grow{flex:1;color:var(--fg-2);font-size:13px;min-width:180px}
+
+/* code */
+.code{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#0d0d0d;margin-top:8px}
+.code-h{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--fg-2);background:var(--raise)}
+.code-h .ts{font-family:var(--sans);font-size:9.5px;font-weight:600;background:#2f74c0;color:#fff;border-radius:3px;padding:1px 3px}
+.code-h .stat{margin-left:auto;font-size:11.5px}
+.code-h .stat i{font-style:normal}
+.code-scroll{overflow-x:auto}
+.code table{border-collapse:collapse;font-family:var(--mono);font-size:12px;line-height:1.8;min-width:100%}
+.code td{padding:0 12px 0 0;white-space:pre;color:var(--g300)}
+.code td.n{color:var(--g600);text-align:right;padding:0 10px 0 12px;user-select:none;width:1%}
+.code tr.del{background:rgba(220,38,38,.10)}
+.code tr.add{background:rgba(22,163,74,.10)}
+.code tr.del td.n{box-shadow:inset 2px 0 var(--bad)}
+.code tr.add td.n{box-shadow:inset 2px 0 var(--ok)}
+.tk-k{color:#d8b4fe}.tk-f{color:#93c5fd}.tk-s{color:#86efac}.tk-c{color:var(--g500)}.tk-n{color:#fdba74}
+
+/* mini customer app (replay + preview), wrapped in the docs .frame */
+.mini{position:relative;border-radius:var(--r-lg);background:var(--frame);padding:8px;user-select:none}
+.mini-inner{position:relative;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+.mini-chrome{display:flex;align-items:center;gap:8px;padding:7px 9px;background:#1a1a1a;border-bottom:1px solid var(--line)}
+.mini-dots{display:flex;gap:5px}
+.mini-dots i{width:9px;height:9px;border-radius:50%;background:var(--g700)}
+.mini-reload{width:24px;height:22px;display:grid;place-items:center;border-radius:6px;color:var(--fg-2)}
+.mini-reload:hover{background:var(--hover);color:var(--g200)}
+.mini-reload.hit{background:var(--active);color:var(--g100)}
+.mini-url{flex:1;min-width:0;font-family:var(--mono);font-size:11px;color:var(--fg-2);background:#111;box-shadow:inset 0 0 0 1px var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-page{position:relative;background:var(--m-bg);color:var(--m-fg);font-family:var(--sans)}
+.mini-nav{display:flex;align-items:center;gap:14px;padding:9px 16px;border-bottom:1px solid var(--m-line);font-size:11.5px}
+.mini-nav b{font-weight:600;margin-right:auto}
+.mini-nav span{color:var(--m-mute);text-decoration:underline;text-underline-offset:2px}
+.mini-nav i{width:16px;height:16px;border-radius:50%;background:#7b74e8;display:block}
+.mini-body{padding:14px 18px 16px;display:flex;flex-direction:column;gap:3px}
+.mini-crumb{font-size:10.5px;color:var(--m-mute)}
+.mini-h{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.mini-sub{font-size:11.5px;color:var(--m-mute);margin-bottom:8px}
+.mini-editor{background:var(--m-panel);border:1px solid var(--m-line);border-radius:7px;height:150px;position:relative;overflow:hidden}
+.mini-editor .txt,.mini-editor textarea{position:absolute;inset:0;padding:10px 12px;font:12px/1.55 var(--sans);color:var(--m-fg);white-space:pre-wrap;overflow:hidden;border:0;background:transparent;resize:none;width:100%;height:100%;user-select:text}
+.mini-editor textarea{overflow:auto}
+.mini-editor textarea:focus{outline:none}
+.mini-editor:focus-within{border-color:#b9b4f5;box-shadow:0 0 0 3px rgba(123,116,232,.15)}
+.mini-editor .ph{position:absolute;left:12px;top:10px;font-size:12px;color:#b7b3aa;pointer-events:none}
+.mini-foot{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--m-mute);margin-top:6px;min-height:20px}
+.mini-status{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-weight:500}
+.mini-status.saved{color:#2f8a5b}
+.mini-status.err{color:#c23f5a}
+.mini-sample{font-size:11px;color:#5d56d6;background:#efeefc;border:1px solid #dedcf8;border-radius:5px;padding:2px 8px;font-weight:500}
+.mini-sample:hover{background:#e6e4fb}
+.mini-reloading{position:absolute;inset:0;background:var(--m-bg);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .12s}
+.mini-reloading.on{opacity:1}
+.spinner{width:18px;height:18px;border-radius:50%;border:2px solid var(--m-line);border-top-color:#7b74e8;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mini-cursor{position:absolute;left:0;top:0;width:16px;height:16px;pointer-events:none;z-index:5;transition:transform .08s linear;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.mini-cursor .click{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:2px solid #7b74e8;opacity:0;transform:scale(.3)}
+.mini-cursor.clicking .click{animation:clk .45s ease-out}
+@keyframes clk{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(1.8)}}
+.mini-flag{position:absolute;right:10px;bottom:10px;background:#dc2626;color:#fff;font-size:11px;font-weight:600;border-radius:6px;padding:3px 8px;opacity:0;transform:translateY(4px);transition:.2s;z-index:4}
+.mini-flag.on{opacity:1;transform:none}
+
+/* replay controls */
+.rp-ctl{display:flex;align-items:center;gap:10px;margin-top:10px}
+.rp-play{width:28px;height:28px;border-radius:50%;background:var(--g100);color:var(--g950);display:grid;place-items:center;flex:none}
+.rp-play:hover{background:#fff}
+.rp-track{position:relative;flex:1;height:22px;cursor:pointer}
+.rp-rail{position:absolute;left:0;right:0;top:10px;height:3px;border-radius:2px;background:var(--g800)}
+.rp-fill{position:absolute;left:0;top:10px;height:3px;max-width:100%;border-radius:2px;background:var(--g400)}
+.rp-mk{position:absolute;top:8px;width:7px;height:7px;border-radius:50%;background:var(--g600);transform:translateX(-50%)}
+.rp-mk.bug{background:var(--bad);width:9px;height:9px;top:7px;box-shadow:0 0 0 3px var(--bad-soft)}
+.rp-time{flex:none;min-width:72px;text-align:right;color:var(--fg-3);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rp-cap{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2);min-height:20px}
+.rp-cap b{font-weight:500;color:var(--g200)}
+.rp-cap.bug b{color:var(--bad)}
+
+/* verify */
+.vf{padding:22px 24px 120px;display:flex;flex-direction:column;gap:18px}
+.vf-head{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.vf-head .h1{font-size:24px}
+.vf-head p{margin:6px 0 0;color:var(--fg-2);max-width:70ch;font-size:15px;line-height:24px}
+.vf-head .timer{margin-left:auto;display:flex;align-items:center;gap:7px;color:var(--fg-3);font-size:12.5px}
+.rec-dot{width:7px;height:7px;border-radius:50%;background:var(--bad);animation:pulse 1.4s infinite}
+.panes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pane-h{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.pane-h b{font-weight:500;color:var(--g200)}
+.pane-h small{color:var(--fg-3);font-size:12px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.step{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:var(--r);background:var(--frame);box-shadow:inset 0 0 0 1px transparent;transition:box-shadow .2s,background .2s}
+.step .ck{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--g700);display:grid;place-items:center;flex:none;margin-top:1px;color:transparent;transition:.2s}
+.step.done{background:rgba(22,163,74,.10);box-shadow:inset 0 0 0 1px var(--ok-line)}
+.step.done .ck{background:var(--ok);box-shadow:none;color:#052e16}
+.step b{display:block;font-weight:500;font-size:13.5px;color:var(--g200)}
+.step small{color:var(--fg-3);font-size:12.5px;line-height:1.45;display:block;margin-top:2px}
+.decide{position:sticky;bottom:0;margin:0 -24px -120px;padding:12px 24px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--panel) 30%);display:flex;flex-direction:column;gap:10px}
+.decide-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--raise);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:10px 10px 10px 14px;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.decide-row .msg{flex:1;color:var(--fg-2);min-width:200px}
+.decide-row .msg b{color:var(--g100);font-weight:500}
+.broken{background:var(--raise);box-shadow:inset 0 0 0 1px var(--bad-line);border-radius:var(--r-lg);padding:12px;display:flex;flex-direction:column;gap:9px}
+.broken label{font-weight:500;color:var(--g200)}
+.broken textarea{width:100%;min-height:70px;background:var(--panel);border:0;box-shadow:inset 0 0 0 1px var(--line-2);border-radius:10px;color:var(--g100);font:inherit;padding:9px 10px;resize:vertical}
+.broken .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.btn.danger{color:var(--bad);border-color:var(--bad-line);background:var(--bad-soft)}
+.btn.danger:hover{background:rgba(220,38,38,.28);color:#fca5a5}
+
+/* handoff */
+.ho{display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:100%}
+.ho-main{padding:24px 24px 32px;min-width:0;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--line)}
+.ho-side{padding:24px 18px 32px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pr-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--fg-2);font-size:13px}
+.branch{font-family:var(--mono);font-size:11.5px;background:var(--g900);box-shadow:inset 0 0 0 1px var(--line);border-radius:6px;padding:1px 6px;color:var(--g200)}
+.vcard{box-shadow:inset 0 0 0 1px var(--ok-line);background:rgba(22,163,74,.10);border-radius:var(--r-lg);padding:14px;display:flex;flex-direction:column;gap:9px}
+.vcard-h{display:flex;align-items:center;gap:8px;color:var(--ok);font-weight:600}
+.vcard p{margin:0;color:var(--g200)}
+.vcard .quote{border-left:2px solid var(--ok-line);padding-left:10px;color:var(--fg-2);font-size:13px}
+.vcard ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--fg-2)}
+.vcard li{display:flex;gap:7px;align-items:center}
+.vcard li svg{color:var(--ok);flex:none}
+.scard{background:var(--frame);border-radius:var(--r-lg);padding:14px;display:flex;flex-direction:column;gap:8px}
+.scard h4{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);font-weight:500}
+.kv{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.kv span{color:var(--fg-3);display:inline-flex;align-items:center;gap:6px}
+.kv b{font-weight:500;color:var(--g200)}
+.merge{display:flex;flex-direction:column;gap:8px}
+.merge .btn{justify-content:center;height:36px}
+
+/* recovery */
+.reccard{box-shadow:inset 0 0 0 1px var(--rec-line);background:linear-gradient(135deg,rgba(202,138,4,.12),transparent 70%),var(--raise);border-radius:var(--r-lg);padding:14px;margin-top:10px;display:flex;flex-direction:column;gap:10px}
+.reccard .stats{display:flex;gap:20px;flex-wrap:wrap}
+.reccard .stats div{display:flex;flex-direction:column}
+.reccard .stats small{color:var(--fg-3);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.reccard .stats b{font-size:18px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg-head)}
+.draft{background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);border-radius:10px;padding:11px 12px;color:var(--g200);white-space:pre-wrap;font-size:13.5px;line-height:1.55}
+.draft-h{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2);flex-wrap:wrap}
+.draft-h .btn{margin-left:auto}
+
+/* chart */
+.chart svg{display:block;width:100%;height:auto}
+.chart-legend{display:flex;gap:14px;font-size:12px;color:var(--fg-3);margin-top:4px}
+.chart-legend span{display:inline-flex;align-items:center;gap:5px}
+
+/* concept guide (sidebar card) */
+.gs{margin-top:20px;background:var(--frame);border-radius:var(--r-lg);overflow:hidden;flex:none}
+.gs-h{display:flex;align-items:center;gap:10px;padding:12px 12px 8px 14px}
+.gs-h b{font-weight:500;font-size:13.5px;display:block;line-height:1.3;color:var(--g200)}
+.gs-h small{color:var(--fg-3);font-size:12px}
+.guide-mark{width:24px;height:24px;border-radius:8px;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;flex:none}
+.gs-steps{display:flex;flex-direction:column;padding:2px 6px 6px}
+.gstep{display:flex;gap:10px;align-items:flex-start;padding:6px 8px;border-radius:10px;text-align:left;color:var(--fg-2);width:100%}
+.gstep:hover{background:var(--hover);color:var(--g300)}
+.gstep.on{background:var(--active);color:var(--g100)}
+.gstep .num{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--g700);display:grid;place-items:center;font-size:10.5px;flex:none;margin-top:1px;font-family:var(--mono)}
+.gstep.on .num{background:var(--g100);color:var(--g950);box-shadow:none}
+.gstep b{font-weight:500;display:block;font-size:13px}
+.gstep small{display:none;font-size:12px;color:var(--fg-3);line-height:1.45;margin-top:2px}
+.gstep.on small{display:block}
+.gs-foot{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 10px;border-top:1px solid var(--line);font-size:12px;color:var(--fg-3)}
+.gs-foot button{color:var(--fg-2)}
+.gs-foot button:hover{color:var(--g200)}
+.gbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--panel);border-top:1px solid var(--line);padding:8px max(10px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));gap:4px;align-items:center}
+.gbar .gstep{flex:1;justify-content:center;align-items:center;padding:6px 4px;gap:6px}
+.gbar .gstep b{font-size:12px;white-space:nowrap}
+.gbar .gstep small{display:none}
+
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-10px);background:var(--g100);color:var(--g950);font-weight:500;padding:8px 14px;border-radius:12px;opacity:0;transition:.2s;z-index:40;display:flex;gap:8px;align-items:center;max-width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width: 1100px){
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ho{grid-template-columns:minmax(0,1fr)}
+  .ho-main{border-right:0;border-bottom:1px solid var(--line)}
+}
+@media (max-width: 960px){
+  .prob-wrap{grid-template-columns:minmax(0,1fr)}
+  .prob-l{border-right:0;border-bottom:1px solid var(--line)}
+  .panes{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width: 820px){
+  .app{grid-template-columns:minmax(0,1fr);padding:8px max(8px,env(safe-area-inset-right,0px)) calc(60px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  .side{display:none}
+  .board{grid-template-columns:minmax(0,1fr);min-width:0}
+  .col{min-height:0}
+  .bar .seg,.bar .hide-sm{display:none}
+  .gbar{display:flex}
+  .prob-l,.prob-r,.ho-main,.ho-side{padding-left:16px;padding-right:16px}
+  .vf{padding-left:16px;padding-right:16px}
+  .decide{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .h1{font-size:22px}
+  .impact b{font-size:17px}
+  .props{grid-template-columns:100px minmax(0,1fr)}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="Workspace">
+    <div class="ws"><div class="ws-logo">R</div>Resonance <span data-icon="chevdown"></span></div>
+    <div class="qa" role="button" tabindex="0" data-toast="Quick actions isn't part of this concept"><span data-icon="search"></span><span>Quick actions</span><span class="k">⌘K</span></div>
+    <button class="nav" data-go="inbox" id="nav-inbox"><span data-fi="inbox"></span>Inbox</button>
+    <button class="nav" data-toast="Activity isn't part of this concept"><span data-fi="bell"></span>Activity</button>
+    <button class="nav" data-toast="Observability isn't part of this concept"><span data-fi="observability"></span>Observability</button>
+    <button class="nav" data-toast="Apps isn't part of this concept"><span data-fi="layers"></span>Apps</button>
+    <button class="nav" data-toast="Services isn't part of this concept"><span data-fi="connections"></span>Services</button>
+    <button class="nav" data-toast="Users isn't part of this concept"><span data-fi="users"></span>Users</button>
+    <button class="nav" data-toast="Companies isn't part of this concept"><span data-fi="building"></span>Companies</button>
+    <button class="nav" data-toast="Settings isn't part of this concept"><span data-fi="settings"></span>Settings</button>
+    <div class="side-h">Problems<span class="n">8</span></div>
+    <div id="side-probs"></div>
+    <div id="guide-side"></div>
+    <div class="side-foot" id="persona"></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <span data-icon="panel" class="hide-sm"></span>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="bar-actions" id="actions"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<div id="guide"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- icons ---------- */
+const P = {
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  inbox:'<path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
+  bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5h4"/>',
+  apps:'<rect x="4" y="6" width="16" height="13" rx="2"/><path d="M8 3h8"/>',
+  layers:'<rect x="4" y="8" width="12" height="12" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v10"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.6c1.4.6 2.3 2 2.6 4.4"/>',
+  building:'<path d="M4 20V5l8-2v17M12 9h8v11M7 8h2M7 12h2M7 16h2M15 13h2M15 16h2M3 20h18"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  panel:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9 4.5v15"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  chevdown:'<path d="m6 9 6 6 6-6"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  play:'<path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none"/>',
+  pause:'<path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor" stroke="none"/>',
+  reload:'<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/>',
+  merge:'<circle cx="6" cy="5.5" r="2"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7.5v9M8 5.5c5 0 8 2.5 8 6.5"/>',
+  spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+  shield:'<path d="M12 3 5 6v5.5c0 4.3 3 7.6 7 9.5 4-1.9 7-5.2 7-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+  user:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.7 3.6-5.6 7-5.6s6.2 1.9 7 5.6"/>',
+  bars:'<path d="M5 19v-3M10 19v-6M15 19V9M20 19V5"/>',
+  card:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/>',
+  copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
+  ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  test:'<path d="M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/>',
+  file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'
+};
+const ic = (n,s=15,sw=1.7)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const bug = (c)=>`<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><g fill="${c}"><ellipse cx="12" cy="13.5" rx="5" ry="6"/><circle cx="12" cy="6.5" r="2.6"/></g><g stroke="${c}" stroke-width="1.6" stroke-linecap="round"><path d="M7 11H4M20 11h-3M7 15.5H4.5M19.5 15.5H17M8 19l-2 2M16 19l2 2M9.5 4.5 8 3M14.5 4.5 16 3"/></g></svg>`;
+const C = {pink:'#ec6aa4',violet:'#8b84f3',yellow:'#e9c440'};
+const FI = {"inbox": "<path clip-rule=\"evenodd\" d=\"M4.60786 2.00006C3.72985 2.00006 2.95451 2.57271 2.6963 3.41189L1.08844 8.63744C1.02981 8.82799 1 9.02624 1 9.22561V12.0001C1 13.1046 1.89543 14.0001 3 14.0001H13C14.1046 14.0001 15 13.1046 15 12.0001V9.22561C15 9.02624 14.9702 8.82799 14.9116 8.63744L13.3037 3.41189C13.0455 2.57271 12.2701 2.00006 11.3921 2.00006H4.60786ZM13.823 8.50006L12.3479 3.70598C12.2188 3.28638 11.8311 3.00006 11.3921 3.00006H4.60786C4.16886 3.00006 3.78119 3.28638 3.65208 3.70598L2.17698 8.50006H4.07295C4.83049 8.50006 5.52302 8.92807 5.8618 9.60563L6.03262 9.94728C6.20202 10.2861 6.54828 10.5001 6.92705 10.5001H9.07295C9.45172 10.5001 9.79798 10.2861 9.96738 9.94728L10.1382 9.60563C10.477 8.92807 11.1695 8.50006 11.9271 8.50006H13.823Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/>", "bell": "<path clip-rule=\"evenodd\" d=\"M3.50001 5.99987C3.50008 3.51465 5.51477 1.5 8.00001 1.5C10.4853 1.5 12.5 3.51472 12.5 6L12.4999 6.03279V6.5C12.4999 7.91542 13.0339 9.20494 13.9122 10.1799C14.0232 10.3031 14.0659 10.4734 14.0262 10.6344C13.9865 10.7954 13.8695 10.9262 13.7139 10.9836C12.6846 11.3636 11.607 11.6439 10.4931 11.8128C10.4977 11.8746 10.5 11.9371 10.5 12C10.5 13.3807 9.38072 14.5 8.00001 14.5C6.6193 14.5 5.50001 13.3807 5.50001 12C5.50001 11.9371 5.50234 11.8747 5.50693 11.8128C4.39289 11.644 3.31525 11.3637 2.28583 10.9836C2.13026 10.9262 2.01328 10.7954 1.97355 10.6344C1.93382 10.4734 1.97651 10.3031 2.08751 10.1799C2.96586 9.20494 3.49988 7.91542 3.49988 6.5L3.50001 5.99987ZM6.50148 11.9328C6.5005 11.9551 6.50001 11.9775 6.50001 12C6.50001 12.8284 7.17158 13.5 8.00001 13.5C8.82843 13.5 9.50001 12.8284 9.50001 12C9.50001 11.9775 9.49951 11.9551 9.49854 11.9328C9.00482 11.9773 8.50494 12 7.99988 12C7.4949 12 6.99511 11.9773 6.50148 11.9328Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/>", "observability": "<path d=\"M8.00085 2.5C11.3142 2.50013 14.1247 4.64855 15.1174 7.62695C15.1976 7.86765 15.1975 8.1284 15.1174 8.36914C14.1258 11.3496 11.3144 13.4999 7.99954 13.5C4.68606 13.5 1.87577 11.3515 0.883008 8.37305C0.80278 8.13234 0.802271 7.87161 0.882356 7.63086C1.87392 4.65031 4.68585 2.5 8.00085 2.5ZM8.00085 3.5C5.1293 3.5 2.69129 5.36244 1.83158 7.94661C1.81973 7.98223 1.81973 8.02102 1.83158 8.05664C2.69229 10.6391 5.12926 12.5 7.99954 12.5C10.8711 12.4999 13.3092 10.6376 14.1688 8.05339C14.1806 8.01781 14.1806 7.97894 14.1688 7.94336C13.3081 5.36104 10.871 3.50013 8.00085 3.5ZM9.5002 8C9.5002 7.17164 8.82853 6.50011 8.0002 6.5C7.17177 6.5 6.5002 7.17157 6.5002 8C6.5002 8.82843 7.17177 9.5 8.0002 9.5C8.82853 9.49989 9.5002 8.82836 9.5002 8ZM10.5002 8C10.5002 9.38065 9.38082 10.4999 8.0002 10.5C6.61948 10.5 5.5002 9.38071 5.5002 8C5.5002 6.61929 6.61948 5.5 8.0002 5.5C9.38082 5.50011 10.5002 6.61935 10.5002 8Z\" fill=\"currentColor\"/>", "layers": "<path d=\"M3.71094 3.10482C3.96234 3.03648 4.22686 3 4.49991 3H11.4999C11.773 3 12.0375 3.03648 12.2889 3.10483C11.9604 2.44969 11.2827 2 10.4999 2H5.49991C4.71714 2 4.0394 2.44969 3.71094 3.10482Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/><path d=\"M1.5 8C1.5 6.89543 2.39543 6 3.5 6H12.5C13.6046 6 14.5 6.89543 14.5 8V12C14.5 13.1046 13.6046 14 12.5 14H3.5C2.39543 14 1.5 13.1046 1.5 12V8Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/><path d=\"M3.49991 5C3.22686 5 2.96234 5.03648 2.71094 5.10482C3.0394 4.44969 3.71714 4 4.49991 4H11.4999C12.2827 4 12.9604 4.44969 13.2889 5.10483C13.0375 5.03648 12.773 5 12.4999 5H3.49991Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/>", "connections": "<path d=\"M6.5 10.4999C6.5 9.94759 6.05228 9.49988 5.5 9.49988H4C3.44772 9.49988 3 9.94759 3 10.4999V11.9999C3 12.5522 3.44772 12.9999 4 12.9999H5.5C6.05228 12.9999 6.5 12.5522 6.5 11.9999V10.4999ZM10.75 13.4999V11.7499H9C8.72386 11.7499 8.5 11.526 8.5 11.2499C8.5 10.9737 8.72386 10.7499 9 10.7499H10.75V8.99988C10.75 8.72374 10.9739 8.49988 11.25 8.49988C11.5261 8.49988 11.75 8.72374 11.75 8.99988V10.7499H13.5C13.7761 10.7499 14 10.9737 14 11.2499C14 11.526 13.7761 11.7499 13.5 11.7499H11.75V13.4999C11.75 13.776 11.5261 13.9999 11.25 13.9999C10.9739 13.9999 10.75 13.776 10.75 13.4999ZM6.5 3.99988C6.5 3.44759 6.05228 2.99988 5.5 2.99988H4C3.44772 2.99988 3 3.44759 3 3.99988V5.49988C3 6.05216 3.44772 6.49988 4 6.49988H5.5C6.05228 6.49988 6.5 6.05216 6.5 5.49988V3.99988ZM13 3.99988C13 3.44759 12.5523 2.99988 12 2.99988H10.5C9.94772 2.99988 9.5 3.44759 9.5 3.99988V5.49988C9.5 6.05216 9.94772 6.49988 10.5 6.49988H12C12.5523 6.49988 13 6.05216 13 5.49988V3.99988ZM7.5 11.9999C7.5 13.1044 6.60457 13.9999 5.5 13.9999H4C2.89543 13.9999 2 13.1044 2 11.9999V10.4999C2 9.39531 2.89543 8.49988 4 8.49988H5.5C6.60457 8.49988 7.5 9.39531 7.5 10.4999V11.9999ZM7.5 5.49988C7.5 6.60445 6.60457 7.49988 5.5 7.49988H4C2.89543 7.49988 2 6.60445 2 5.49988V3.99988C2 2.89531 2.89543 1.99988 4 1.99988H5.5C6.60457 1.99988 7.5 2.89531 7.5 3.99988V5.49988ZM14 5.49988C14 6.60445 13.1046 7.49988 12 7.49988H10.5C9.39543 7.49988 8.5 6.60445 8.5 5.49988V3.99988C8.5 2.89531 9.39543 1.99988 10.5 1.99988H12C13.1046 1.99988 14 2.89531 14 3.99988V5.49988Z\" fill=\"currentColor\"/>", "users": "<path d=\"M3 4.25C3 2.73122 4.23122 1.5 5.75 1.5C7.26878 1.5 8.5 2.73122 8.5 4.25C8.5 5.76878 7.26878 7 5.75 7C4.23122 7 3 5.76878 3 4.25Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/><path d=\"M9.5 5.75C9.5 4.50736 10.5074 3.5 11.75 3.5C12.9926 3.5 14 4.50736 14 5.75C14 6.99264 12.9926 8 11.75 8C10.5074 8 9.5 6.99264 9.5 5.75Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/><path d=\"M1 12.75C1 10.1266 3.12665 8 5.75 8C8.37335 8 10.5 10.1266 10.5 12.75V12.7517C10.5 12.7782 10.4998 12.8049 10.4993 12.8313C10.4964 13.0036 10.405 13.1623 10.2573 13.2512C8.94047 14.0441 7.39771 14.5 5.75 14.5C4.10229 14.5 2.55953 14.0441 1.24271 13.2512C1.09504 13.1623 1.00358 13.0036 1.00068 12.8313C1.00023 12.8043 1 12.7772 1 12.75Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/><path d=\"M11.4999 12.7521C11.4999 12.7841 11.4996 12.8163 11.4991 12.8481C11.4953 13.0739 11.4408 13.2918 11.3438 13.488C11.4782 13.496 11.6136 13.5 11.7499 13.5C12.8137 13.5 13.8214 13.2535 14.7176 12.8142C14.8823 12.7334 14.9896 12.569 14.9971 12.3858C14.999 12.3407 14.9999 12.2955 14.9999 12.25C14.9999 10.4551 13.5448 9 11.7499 9C11.2523 9 10.7808 9.11184 10.3591 9.31177C11.0756 10.2708 11.4999 11.4608 11.4999 12.75V12.7521Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/>", "building": "<path clip-rule=\"evenodd\" d=\"M2 1.49988C1.72386 1.49988 1.5 1.72374 1.5 1.99988C1.5 2.27602 1.72386 2.49988 2 2.49988V13.4999H1.5C1.22386 13.4999 1 13.7237 1 13.9999C1 14.276 1.22386 14.4999 1.5 14.4999H10V2.49988C10.2761 2.49988 10.5 2.27602 10.5 1.99988C10.5 1.72374 10.2761 1.49988 10 1.49988H2ZM4.5 12.9999V11.4999C4.5 11.2237 4.72386 10.9999 5 10.9999H7C7.27614 10.9999 7.5 11.2237 7.5 11.4999V12.9999C7.5 13.276 7.27614 13.4999 7 13.4999H5C4.72386 13.4999 4.5 13.276 4.5 12.9999ZM4 4.49988C4 4.22374 4.22386 3.99988 4.5 3.99988H5C5.27614 3.99988 5.5 4.22374 5.5 4.49988C5.5 4.77602 5.27614 4.99988 5 4.99988H4.5C4.22386 4.99988 4 4.77602 4 4.49988ZM4.5 5.99988C4.22386 5.99988 4 6.22374 4 6.49988C4 6.77602 4.22386 6.99988 4.5 6.99988H5C5.27614 6.99988 5.5 6.77602 5.5 6.49988C5.5 6.22374 5.27614 5.99988 5 5.99988H4.5ZM4 8.49988C4 8.22374 4.22386 7.99988 4.5 7.99988H5C5.27614 7.99988 5.5 8.22374 5.5 8.49988C5.5 8.77602 5.27614 8.99988 5 8.99988H4.5C4.22386 8.99988 4 8.77602 4 8.49988ZM7 3.99988C6.72386 3.99988 6.5 4.22374 6.5 4.49988C6.5 4.77602 6.72386 4.99988 7 4.99988H7.5C7.77614 4.99988 8 4.77602 8 4.49988C8 4.22374 7.77614 3.99988 7.5 3.99988H7ZM6.5 6.49988C6.5 6.22374 6.72386 5.99988 7 5.99988H7.5C7.77614 5.99988 8 6.22374 8 6.49988C8 6.77602 7.77614 6.99988 7.5 6.99988H7C6.72386 6.99988 6.5 6.77602 6.5 6.49988ZM7 7.99988C6.72386 7.99988 6.5 8.22374 6.5 8.49988C6.5 8.77602 6.72386 8.99988 7 8.99988H7.5C7.77614 8.99988 8 8.77602 8 8.49988C8 8.22374 7.77614 7.99988 7.5 7.99988H7Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/><path clip-rule=\"evenodd\" d=\"M11 4.49988V14.4999H14.5C14.7761 14.4999 15 14.276 15 13.9999C15 13.7237 14.7761 13.4999 14.5 13.4999H14V5.49988C14.2761 5.49988 14.5 5.27602 14.5 4.99988C14.5 4.72374 14.2761 4.49988 14 4.49988H11ZM12 7.49988C12 7.22374 12.2239 6.99988 12.5 6.99988H12.505C12.7811 6.99988 13.005 7.22374 13.005 7.49988V7.50488C13.005 7.78102 12.7811 8.00488 12.505 8.00488H12.5C12.2239 8.00488 12 7.78102 12 7.50488V7.49988ZM12.5 8.99988C12.2239 8.99988 12 9.22374 12 9.49988V9.50488C12 9.78102 12.2239 10.0049 12.5 10.0049H12.505C12.7811 10.0049 13.005 9.78102 13.005 9.50488V9.49988C13.005 9.22374 12.7811 8.99988 12.505 8.99988H12.5ZM12 11.4999C12 11.2237 12.2239 10.9999 12.5 10.9999H12.505C12.7811 10.9999 13.005 11.2237 13.005 11.4999V11.5049C13.005 11.781 12.7811 12.0049 12.505 12.0049H12.5C12.2239 12.0049 12 11.781 12 11.5049V11.4999Z\" fill=\"currentColor\" fill-rule=\"evenodd\"/>", "settings": "<path d=\"M11.3359 6.93761C11.4282 7.22763 11.1921 7.49926 10.8878 7.49926H8.57781C8.39919 7.49926 8.23413 7.40397 8.14481 7.24928L6.98965 5.24867C6.83737 4.98494 6.95472 4.64457 7.25229 4.57982C7.49321 4.52739 7.74338 4.49977 8 4.49977C9.5627 4.49977 10.8862 5.52391 11.3359 6.93761Z\" fill=\"currentColor\"/><path d=\"M5.41292 5.6424C5.61819 5.41727 5.97178 5.48569 6.12412 5.74953L7.27878 7.74927C7.3681 7.90397 7.36811 8.09458 7.27879 8.24928L6.12385 10.2497C5.9715 10.5136 5.61786 10.582 5.41261 10.3568C4.84568 9.73482 4.5 8.90767 4.5 7.99977C4.5 7.09171 4.84581 6.26442 5.41292 5.6424Z\" fill=\"currentColor\"/><path d=\"M7.25184 11.4196C6.9543 11.3548 6.83698 11.0145 6.98923 10.7508L8.14482 8.74926C8.23414 8.59456 8.39921 8.49926 8.57784 8.49926H10.8881C11.1924 8.49926 11.4284 8.77079 11.3363 9.06079C10.8869 10.4751 9.56312 11.4998 8 11.4998C7.74322 11.4998 7.49289 11.4721 7.25184 11.4196Z\" fill=\"currentColor\"/><circle cx=\"8\" cy=\"8\" r=\"5.5\" fill=\"none\" stroke=\"currentColor\"/><path d=\"M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.85.85M11.75 11.75l.85.85M3.4 12.6l.85-.85M11.75 4.25l.85-.85\" stroke=\"currentColor\" stroke-linecap=\"round\"/>"};
+const fi = n=>`<svg class="fi" viewBox="0 0 16 16" fill="none" aria-hidden="true">${FI[n]}</svg>`;
+document.querySelectorAll('[data-fi]').forEach(el=>el.outerHTML=fi(el.dataset.fi));
+document.querySelectorAll('[data-icon]').forEach(el=>el.outerHTML=ic(el.dataset.icon));
+
+/* ---------- data ---------- */
+const PROBLEMS = [
+  {id:'PRB-8', side:'Invitation acceptance fails', title:'Valid invitation fails on acceptance', c:'violet', pri:'High', users:148, arr:'$3.3M', col:'active'},
+  {id:'PRB-24',side:'Registration oversells', title:'Concurrent registrations oversell a session', c:'pink', pri:'High', users:405, arr:'$4.3M', col:'active'},
+  {id:'PRB-4', side:'Campaign retry double-sends', title:'Campaign reports failure after sending and retry doubles delivery', c:'violet', pri:'High', users:214, arr:'$4.2M', col:'active'},
+  {id:'PRB-6', side:'Email search misses attendee', title:'Attendee search cannot find an email address', c:'pink', pri:'Medium', users:31, arr:'$4.2M', col:'active'},
+  {id:'PRB-1', side:'Autosave discards long note', title:'Autosave reports saved while the note is discarded', c:'pink', pri:'High', users:86, arr:'$4.2M', col:'verify', focus:true},
+  {id:'PRB-5', side:'Large upload stuck', title:'Large uploads remain stuck in Processing', c:'yellow', pri:'High', users:67, arr:'$4.2M', col:'recovery'},
+  {id:'PRB-13',side:'Bulk assignment partial', title:'Bulk assignment reports all rows but updates one page', c:'pink', pri:'High', users:326, arr:'$4.3M', col:'recovery'},
+  {id:'PRB-23',side:'Accounting retry loop', title:'Accounting sync retries invalid credentials forever', c:'violet', pri:'High', users:61, arr:'$4.2M', col:'recovery'},
+];
+const SIDE_ORDER = ['PRB-1','PRB-8','PRB-24','PRB-4','PRB-5','PRB-13','PRB-6','PRB-23'];
+
+const NOTE = `Session notes · Intro to Wheel Throwing, Thu Nov 14
+
+Centering: most of the group got there by the end of the first hour. The ones who struggled were all bracing with their wrists instead of locking their elbows against their thighs. Next session, demo this before anyone touches clay, and slow the wheel down for the first ten minutes.
+
+Clay: the 25 lb bags of B-Mix were too wet again. Wedge two bags tomorrow morning and leave them uncovered for an hour. Ask Corinne if we can switch to the speckled buff for the advanced group.
+
+Opening and pulling: three people tore through the floor of their cylinders. Use the needle tool trick to check floor thickness before pulling walls. Show the knuckle pull from the outside first, it clicks faster than the sponge method for beginners.
+
+Studio: wheel 4 is wobbling at high speed. Splash pan on wheel 7 is cracked. Glaze shelf is out of the celadon and the shino. Kiln load is Saturday, so anything that needs a bisque has to be bone dry by Friday night.
+
+Attendee notes
+Ana R. Strong centering, ready to try a bowl next week.
+Ben T. Keeps over-watering. Give him a sponge only, no bucket.
+Chloe W. Missed the first 20 minutes. Send her the centering video.
+Dev P. Wrist bracing. Pair him with Hana for the demo.
+Eli M. First time on a wheel, very patient. Two good cylinders.
+Fatima K. Wants to try trimming early. Hold off until session 3.
+Gus O. Left-handed. Reverse his wheel and move him to wheel 2.
+Hana S. Wrist bracing too, but fixed it by the end.
+Iris L. Asked about a private lesson. Follow up by email.
+Jonah B. Tore three floors. Needle tool check, every time.
+Kemi A. Great walls. Push her to go taller next week.
+Leo V. Asked about the membership. Send him the studio hours page.
+
+Next session plan
+Start with a five minute centering demo, elbows locked, wheel slow. Then everyone centers and opens two pounds, no pulling yet. Second hour is pulling: one cylinder each, cut in half with the wire so they can see the wall thickness. Last 20 minutes is cleanup and a quick look at the bisque shelf so people see where their pieces are headed.
+
+Things that worked
+The cut-in-half cylinder was the best moment of the night. Half the room said it finally made sense after seeing their own walls. Keep doing it. The playlist was a hit too, and nobody complained about the room temperature this time.
+
+Things to change
+Too much talking at the start. Cut the intro to five minutes. Put aprons and tools at each wheel before people arrive so we don't lose ten minutes handing things out. Print the glaze chart instead of passing around the binder.
+
+Follow-ups
+Order more celadon and shino. Book the wheel repair for wheel 4. Email the group the glaze chart and the parking info before Thursday. Remind everyone that pieces left after two weeks go into the reclaim bucket.`;
+const NOTE_LEN = NOTE.length;
+
+/* ---------- state ---------- */
+const S = {view:'inbox', status:'ready', guideOpen:true, verifyStart:0, checkTime:'0:00', verifierNote:'', brokenOpen:false, preview:null, sentBack:false};
+
+/* ---------- utils ---------- */
+const $ = s=>document.querySelector(s);
+const fmt = n=>n.toLocaleString('en-US');
+let toastT;
+function toast(msg){const t=$('#toast');t.innerHTML=ic('check',14,2.2)+'<span></span>';t.querySelector('span').textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);}
+const esc = s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- replay (Maya's session, buggy build) ---------- */
+const RP = {D:7.6, events:[
+  {t:0.4,  cap:'Maya opens her session notes', mk:false},
+  {t:1.3,  cap:`Pastes her notes (${fmt(NOTE_LEN)} characters)`, mk:true},
+  {t:2.2,  cap:'App says “Saved”', mk:true},
+  {t:4.2,  cap:'Maya refreshes the page', mk:true},
+  {t:4.9,  cap:'Her note is gone', mk:true, bug:true},
+]};
+function miniMarkup({url, editable}){
+  return `<div class="mini"><div class="mini-inner">
+    <div class="mini-chrome">
+      <div class="mini-dots"><i></i><i></i><i></i></div>
+      <button class="mini-reload" data-reload aria-label="Refresh preview">${ic('reload',13,2)}</button>
+      <div class="mini-url">${url}</div>
+    </div>
+    <div class="mini-page">
+      <div class="mini-nav"><b>Resonance</b><span>Attendees</span><span>Integrations</span><span>My bookings</span><i></i></div>
+      <div class="mini-body">
+        <div class="mini-crumb">Your workshops / Intro to Wheel Throwing</div>
+        <div class="mini-h">Session notes</div>
+        <div class="mini-sub">Thu, Nov 14 · 12 attendees</div>
+        <div class="mini-editor">
+          ${editable?'<textarea id="pv-text" aria-label="Session notes" spellcheck="false"></textarea>':'<div class="txt"></div>'}
+          <div class="ph">Start writing your notes…</div>
+        </div>
+        <div class="mini-foot">
+          ${editable?`<button class="mini-sample" data-paste>Paste sample note (${fmt(NOTE_LEN)} chars)</button>`:''}
+          <span class="mini-count"></span>
+          <span class="mini-status"></span>
+        </div>
+      </div>
+      <div class="mini-reloading"><div class="spinner"></div></div>
+      ${editable?'':'<div class="mini-flag">Note lost</div>'}
+    </div>
+    ${editable?'':`<div class="mini-cursor"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 1.5v12l3.3-3.1 2.2 4.6 1.9-.9-2.2-4.5H11.5z" fill="#111" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/></svg><span class="click"></span></div>`}
+  </div></div>`;
+}
+function mountReplay(root, {compact}={}){
+  root.innerHTML = miniMarkup({url:'resonance-app.vercel.app/workshops/wheel-101/notes', editable:false}) +
+    `<div class="rp-ctl">
+      <button class="rp-play" aria-label="Pause replay">${ic('pause',13)}</button>
+      <div class="rp-track" role="slider" aria-label="Replay position" tabindex="0">
+        <div class="rp-rail"></div><div class="rp-fill"></div>
+        ${RP.events.filter(e=>e.mk).map(e=>`<span class="rp-mk ${e.bug?'bug':''}" style="left:${e.t/RP.D*100}%"></span>`).join('')}
+      </div>
+      <span class="rp-time">0:00 / 0:0${Math.round(RP.D)}</span>
+    </div>
+    <div class="rp-cap"><span class="rp-cap-t"></span></div>`;
+  const q=s=>root.querySelector(s);
+  const txt=q('.txt'), ph=q('.ph'), count=q('.mini-count'), status=q('.mini-status'), reloading=q('.mini-reloading'),
+        cursor=q('.mini-cursor'), flag=q('.mini-flag'), fill=q('.rp-fill'), time=q('.rp-time'), cap=q('.rp-cap'),
+        play=q('.rp-play'), track=q('.rp-track'), reloadBtn=q('[data-reload]'), page=q('.mini-inner');
+  reloadBtn.tabIndex=-1;
+  const path=[[0,.82,.86],[1.0,.42,.62],[3.3,.44,.64],[4.05,.075,.045],[4.6,.075,.045],[5.6,.5,.68],[RP.D,.5,.68]];
+  const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+  let t=0, playing=true, last=performance.now(), raf, lastClick=-1;
+  function pos(tt){for(let i=0;i<path.length-1;i++){const [a,ax,ay]=path[i],[b,bx,by]=path[i+1];if(tt>=a&&tt<=b){const k=ease((tt-a)/(b-a||1));return [ax+(bx-ax)*k, ay+(by-ay)*k];}}return [path.at(-1)[1],path.at(-1)[2]];}
+  function render(){
+    const hasText = t>=1.3 && t<4.35;
+    txt.textContent = hasText ? NOTE : '';
+    ph.style.display = hasText ? 'none' : '';
+    count.textContent = hasText ? `${fmt(NOTE_LEN)} characters` : '';
+    let st='', cls='';
+    if(t>=1.6 && t<2.2){st='Saving…';}
+    else if(t>=2.2 && t<4.35){st=ic('check',12,2.4)+'Saved';cls='saved';}
+    status.innerHTML=st; status.className='mini-status '+cls;
+    reloading.classList.toggle('on', t>=4.35 && t<4.9);
+    flag.classList.toggle('on', t>=4.9);
+    reloadBtn.classList.toggle('hit', t>=4.15 && t<4.5);
+    const r=page.getBoundingClientRect(); const [x,y]=pos(t);
+    cursor.style.transform=`translate(${x*r.width}px,${y*r.height}px)`;
+    const clickAt=[1.25,4.2].find(c=>t>=c&&t<c+.1);
+    if(clickAt!==undefined && clickAt!==lastClick){lastClick=clickAt;cursor.classList.remove('clicking');void cursor.offsetWidth;cursor.classList.add('clicking');}
+    const tt=Math.min(t,RP.D);
+    fill.style.width=(tt/RP.D*100)+'%';
+    time.textContent=`0:0${Math.round(tt)} / 0:0${Math.round(RP.D)}`;
+    let ev=RP.events[0]; for(const e of RP.events) if(t>=e.t) ev=e;
+    cap.className='rp-cap'+(ev.bug?' bug':'');
+    cap.innerHTML=(ev.bug?bug(C.pink):`<span class="dot" style="color:var(--fg-3)"></span>`)+`<span><b></b></span>`;
+    cap.querySelector('b').textContent=ev.cap;
+  }
+  function loop(now){
+    const dt=(now-last)/1000; last=now;
+    if(playing){t+=dt; if(t>RP.D+1.2){t=0;lastClick=-1;}}
+    render(); raf=requestAnimationFrame(loop);
+  }
+  play.onclick=()=>{playing=!playing;play.innerHTML=ic(playing?'pause':'play',13);play.setAttribute('aria-label',playing?'Pause replay':'Play replay');};
+  const seek=e=>{const r=track.getBoundingClientRect();t=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*RP.D;lastClick=-1;};
+  track.addEventListener('pointerdown',e=>{seek(e);track.setPointerCapture(e.pointerId);});
+  track.addEventListener('pointermove',e=>{if(e.buttons)seek(e);});
+  track.addEventListener('keydown',e=>{if(e.key==='ArrowRight')t=Math.min(RP.D,t+.5);if(e.key==='ArrowLeft')t=Math.max(0,t-.5);});
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){playing=false;t=4.95;play.innerHTML=ic('play',13);}
+  raf=requestAnimationFrame(loop);
+  return ()=>cancelAnimationFrame(raf);
+}
+
+/* ---------- live preview (fixed build) ---------- */
+function mountPreview(root){
+  root.innerHTML = miniMarkup({url:'resonance-git-prb-1-autosave.vercel.app/workshops/wheel-101/notes', editable:true});
+  const P = S.preview || (S.preview = {saved:'', pasted:false, sawSaved:false, refreshed:false, survived:false});
+  const ta=root.querySelector('#pv-text'), ph=root.querySelector('.ph'), count=root.querySelector('.mini-count'),
+        status=root.querySelector('.mini-status'), reloading=root.querySelector('.mini-reloading');
+  ta.value=P.saved; let timer, pending=false;
+  function paint(){
+    ph.style.display=ta.value?'none':'';
+    count.textContent=ta.value?`${fmt(ta.value.length)} characters`:'';
+  }
+  function setStatus(kind){
+    status.className='mini-status'+(kind==='saved'?' saved':'');
+    status.innerHTML = kind==='saving'?'Saving…':kind==='saved'?ic('check',12,2.4)+'Saved':kind==='dirty'?'Unsaved changes':'';
+  }
+  function onChange(){
+    paint(); pending=true; setStatus('dirty'); clearTimeout(timer);
+    if(ta.value.length>2000) P.pasted=true;
+    timer=setTimeout(()=>{
+      setStatus('saving');
+      timer=setTimeout(()=>{ // server confirms first, then the UI says Saved
+        P.saved=ta.value; pending=false; setStatus('saved');
+        if(P.saved.length>2000){P.sawSaved=true;}
+        updateSteps();
+      },700);
+    },450);
+    updateSteps();
+  }
+  ta.addEventListener('input',onChange);
+  root.querySelector('[data-paste]').onclick=()=>{ta.value=NOTE;ta.scrollTop=0;onChange();};
+  root.querySelector('[data-reload]').onclick=()=>{
+    clearTimeout(timer); reloading.classList.add('on');
+    setTimeout(()=>{
+      ta.value=P.saved; pending=false; setStatus(''); paint(); reloading.classList.remove('on');
+      if(P.sawSaved){P.refreshed=true; P.survived=P.saved.length>2000;}
+      updateSteps();
+    },650);
+  };
+  paint(); setStatus(P.saved?'saved':'');
+}
+function updateSteps(){
+  const P=S.preview||{}; const done=[P.pasted,P.sawSaved,P.refreshed,P.survived];
+  document.querySelectorAll('.step').forEach((el,i)=>el.classList.toggle('done',!!done[i]));
+  const all=done.every(Boolean);
+  const msg=$('#decide-msg'); if(!msg) return;
+  const n=done.filter(Boolean).length;
+  msg.innerHTML = all
+    ? `<b>Looks fixed.</b> The long note survived a refresh on the preview.`
+    : `<b>${n} of 4 checks done.</b> Try the steps on the preview, then decide.`;
+}
+
+/* ---------- views ---------- */
+let cleanup=null;
+const views = {
+  inbox(){
+    crumbs(`<b>Inbox</b>`);
+    actions(`<span class="btn ghost hide-sm" aria-hidden="true">${ic('bars',14)}</span><div class="seg"><span class="on">Board</span><span>List</span></div>`);
+    const cols=[
+      {k:'active', name:'Active', icon:`<span class="dot" style="color:var(--accent)"></span>`},
+      {k:'verify', name:'Ready to verify', icon:`<span class="dot pulse" style="color:var(--ok)"></span>`, tag:true},
+      {k:'recovery', name:'In recovery', icon:`<span class="dot" style="color:var(--rec)"></span>`},
+    ];
+    const colOf=p=>p.id==='PRB-1'?(S.status==='recovery'?'recovery':S.status==='broken'?'active':'verify'):p.col;
+    const html=cols.map(c=>{
+      const items=PROBLEMS.filter(p=>colOf(p)===c.k);
+      return `<section class="col ${c.k==='verify'?'verify':''}" aria-label="${c.name}">
+        <div class="col-h">${c.icon}${c.name}${c.tag?'<span class="new-tag">New</span>':''}<span class="n tab">${items.length}</span></div>
+        ${items.map(card).join('') || (c.k==='verify'?`<div class="col-empty">Nothing waiting on you. When the agent ships a fix to a preview, it lands here so a teammate can confirm users can do the thing again.</div>`:'')}
+      </section>`;
+    }).join('');
+    $('#content').innerHTML=`<div class="board">${html}</div>`;
+  },
+  problem(){
+    crumbs(`<button data-go="inbox">Inbox</button>${ic('chev',13)}<b>Autosave reports saved while the note is discarded</b>`);
+    actions(`<span class="btn ghost hide-sm">Dismiss</span><span class="btn ghost hide-sm" aria-hidden="true">${ic('bell',14)}</span>`);
+    const st=S.status;
+    const statusChip = st==='recovery'?`<span class="chip rec"><span class="dot"></span>In recovery</span>`
+      : st==='broken'?`<span class="chip"><span class="dot" style="color:var(--accent)"></span>Active · agent retrying</span>`
+      : st==='verified'?`<span class="chip ok"><span class="dot"></span>Verified · awaiting merge</span>`
+      : `<span class="chip ok"><span class="dot pulse"></span>Ready to verify</span>`;
+    $('#content').innerHTML=`<div class="prob-wrap">
+      <div class="prob-l">
+        <div class="bug-badge">${bug(C.pink).replace('15','22').replace('15','22')}</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <h1 class="h1">Autosave reports saved while the note is discarded</h1>
+          <p class="lede">Long notes show “Saved” but are never stored. When the host comes back, the note is gone.</p>
+        </div>
+        <div>
+          <div class="sec-h">The moment <span class="hint">Maya Chen · Kiln &amp; Co · Nov 9, 4:02 PM</span></div>
+          <div id="moment"></div>
+        </div>
+        <div class="impact">
+          <div><small>Affected users</small><b>86</b></div>
+          <div><small>Companies</small><b>4</b></div>
+          <div><small>ARR at risk</small><b>$4.2M</b></div>
+        </div>
+        <dl class="props">
+          <dt>ID</dt><dd class="mono" style="font-size:12.5px"># PRB-1</dd>
+          <dt>Status</dt><dd>${statusChip}</dd>
+          <dt>Priority</dt><dd>${ic('bars',13)} High</dd>
+          <dt>Category</dt><dd><span class="dot" style="color:var(--accent)"></span>Data loss</dd>
+          <dt>Assignee</dt><dd>${st==='verified'||st==='recovery'?'<span class="av s" style="width:18px;height:18px;font-size:9px">SO</span> Sam Ortiz':'Unassigned'}</dd>
+          <dt>First seen</dt><dd class="tab">Sun, Oct 19 at 9:41 AM</dd>
+          <dt>Last seen</dt><dd class="tab">${st==='recovery'?'Mon, Nov 9 at 4:02 PM':'Mon, Nov 9 at 4:02 PM'}</dd>
+        </dl>
+        <div>
+          <div class="sec-h">Occurrences · last 3 weeks</div>
+          <div class="chart" id="chart"></div>
+        </div>
+      </div>
+      <div class="prob-r">
+        <div class="tabs"><span class="on">Activity</span><span>Sessions</span><span>Findings</span><span class="cm">Comments</span></div>
+        <div class="tl">
+          <div class="tl-i"><div class="tl-h"><b>Problem detected</b><time>Oct 19, 9:44 AM</time></div>
+            <p class="tl-p">12 sessions where a note was pasted, showed “Saved”, and was empty on the next load.</p></div>
+          <div class="tl-i"><div class="tl-h"><b>Root cause</b><time>Oct 19, 10:02 AM</time></div>
+            <div class="box"><p>The app shows “Saved” before the server confirms anything. Notes over 2,000 characters are rejected by the server, and the app never tells the host.</p>
+              <button class="disclose" aria-expanded="false" data-toggle="tech">${ic('chev',13)}Technical details</button>
+              <div id="tech" hidden>
+                <p style="margin-top:10px;color:var(--fg-2);font-size:12.5px">The optimistic update sets <span class="mono">status: "saved"</span> before the request resolves. <span class="mono">POST /api/notes/:id</span> returns 413 when the body is over 2,000 characters, and the client swallows the error.</p>
+              </div>
+            </div></div>
+          <div class="tl-i ${st==='ready'?'wait':'ok'}"><div class="tl-h"><b>Fix ready</b>${ic('spark',13)}<span>Interfere agent</span><time>Nov 10, 1:18 PM</time></div>
+            <p class="tl-p">Only show “Saved” after the server confirms. Raise the limit to 20,000 characters. Show a clear error if a save fails.</p>
+            ${st==='ready'?`<div class="fixcard">
+              <div class="fixcard-top"><span class="chip ok"><span class="dot pulse"></span>Preview live</span><b>Needs a teammate to confirm it works for users</b></div>
+              <div class="url">resonance-git-prb-1-autosave.vercel.app</div>
+              <div class="fixcard-row">
+                <span class="grow">You'll repeat what Maya did on the preview. About a minute. No code needed.</span>
+                <button class="btn ok" data-go="verify">Verify fix <kbd>V</kbd></button>
+              </div>
+            </div>`:''}
+            <button class="disclose" aria-expanded="false" data-toggle="diff" style="margin-top:10px">${ic('chev',13)}For engineers · 2 files changed</button>
+            <div id="diff" hidden>${diffHTML()}</div>
+          </div>
+          ${st==='broken'?`<div class="tl-i bad"><div class="tl-h"><b>Jordan Lee</b><span>reported it's still broken</span><time>just now</time></div>
+            <div class="box"><p>${esc(S.verifierNote||'No note added.')}</p></div></div>
+            <div class="tl-i wait"><div class="tl-h"><b>Agent is working on a new fix</b>${ic('spark',13)}<time>just now</time></div>
+            <p class="tl-p">Jordan's note and check recording were added to the agent's context. You'll be asked to verify again when the next preview is ready.</p></div>`:''}
+          ${st==='verified'||st==='recovery'?`<div class="tl-i ok"><div class="tl-h"><b>Jordan Lee</b><span>verified on preview</span><time>${S.checkTime} check · today</time></div>
+            <p class="tl-p">Long note survived a refresh on the preview.${S.verifierNote?` “${esc(S.verifierNote)}”`:''}</p></div>`:''}
+          ${st==='verified'?`<div class="tl-i wait"><div class="tl-h"><b>Waiting on Sam Ortiz</b><span>to review and merge</span></div>
+            <p class="tl-p"><button class="btn" data-go="handoff" style="margin-top:4px">Open handoff ${ic('chev',13)}</button></p></div>`:''}
+          ${st==='recovery'?`<div class="tl-i ok"><div class="tl-h"><b>Sam Ortiz</b><span>merged #482 and deployed</span><time>just now</time></div></div>
+            <div class="tl-i rec"><div class="tl-h"><b>In recovery</b><span>watching for new occurrences</span></div>
+              <div class="reccard">
+                <div class="stats"><div><small>New since deploy</small><b>0</b></div><div><small>Sessions checked</small><b>23</b></div><div><small>Closes automatically</small><b>in 48h</b></div></div>
+                <div class="draft-h">${ic('users',14)}<span>Draft for the 4 affected companies</span><button class="btn" data-copy>${ic('copy',13)}Copy</button></div>
+                <div class="draft" id="draft">Hi there, quick heads up from the Resonance team. Between Oct 19 and Nov 9, long session notes could show “Saved” without actually saving. That's fixed as of today. If you lost a note in that window, reply here and we'll help you recover what we can. Sorry for the hassle.</div>
+              </div></div>`:''}
+        </div>
+      </div>
+    </div>`;
+    const stop=mountReplay($('#moment'));
+    drawChart($('#chart'));
+    return stop;
+  },
+  verify(){
+    if(S.status!=='ready'){S.status='ready';}
+    crumbs(`<button data-go="inbox">Inbox</button>${ic('chev',13)}<button data-go="problem" class="hide-sm">PRB-1</button><span class="hide-sm">${ic('chev',13)}</span><b>Verify fix</b>`);
+    actions(`<span class="chip ok hide-sm"><span class="dot pulse"></span>Preview live</span>`);
+    if(!S.verifyStart) S.verifyStart=Date.now();
+    $('#content').innerHTML=`<div class="vf">
+      <div class="vf-head">
+        <div>
+          <h1 class="h1">Can hosts save long notes again?</h1>
+          <p>On the left is what happened to Maya. On the right is the same page with the agent's fix. Repeat what she did and tell us if it works. You don't need to read any code.</p>
+        </div>
+        <div class="timer"><span class="rec-dot"></span><span>Recording your check · <span id="vf-time" class="tab">0:00</span></span></div>
+      </div>
+      <div class="panes">
+        <div>
+          <div class="pane-h">${bug(C.pink)}<b>What Maya experienced</b><small>Production · Nov 9</small></div>
+          <div id="vf-replay"></div>
+        </div>
+        <div>
+          <div class="pane-h"><span class="dot" style="color:var(--ok)"></span><b>Preview with the fix</b><small>Live · try it here</small></div>
+          <div id="vf-preview"></div>
+          <p style="margin:9px 0 0;color:var(--fg-3);font-size:12.5px">This is a real preview deploy. Nothing here touches production data.</p>
+        </div>
+      </div>
+      <div>
+        <div class="sec-h">Your checklist <span class="hint">Checks itself off as you go</span></div>
+        <div class="steps">
+          <div class="step"><span class="ck">${ic('check',11,3)}</span><div><b>Paste a long note</b><small>Over 2,000 characters. Use the sample button if you want.</small></div></div>
+          <div class="step"><span class="ck">${ic('check',11,3)}</span><div><b>Wait for “Saved”</b><small>It should only appear once the note is actually stored.</small></div></div>
+          <div class="step"><span class="ck">${ic('check',11,3)}</span><div><b>Refresh the page</b><small>Use the refresh button in the preview's address bar.</small></div></div>
+          <div class="step"><span class="ck">${ic('check',11,3)}</span><div><b>The note is still there</b><small>Every line, not just the first part.</small></div></div>
+        </div>
+      </div>
+      <div class="decide">
+        <div id="broken-slot"></div>
+        <div class="decide-row">
+          <div class="msg" id="decide-msg"></div>
+          <button class="btn" data-act="broken">Still broken <kbd>B</kbd></button>
+          <button class="btn ok" data-act="fixed">Fixed for users <kbd>F</kbd></button>
+        </div>
+      </div>
+    </div>`;
+    const stop=mountReplay($('#vf-replay'));
+    mountPreview($('#vf-preview'));
+    updateSteps(); renderBroken();
+    const tick=setInterval(()=>{const el=$('#vf-time'); if(el) el.textContent=elapsed();},500);
+    return ()=>{stop();clearInterval(tick);};
+  },
+  handoff(){
+    crumbs(`<button data-go="inbox">Inbox</button>${ic('chev',13)}<button data-go="problem" class="hide-sm">PRB-1</button><span class="hide-sm">${ic('chev',13)}</span><b>Review fix #482</b>`);
+    actions(`<span class="chip ok hide-sm">${ic('shield',13)}Verified for users</span>`);
+    const verified = S.status==='verified';
+    $('#content').innerHTML=`<div class="ho">
+      <div class="ho-main">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <h1 class="h1" style="font-size:20px">fix(notes): only show Saved after the server confirms</h1>
+          <div class="pr-meta">${ic('spark',13)}<span>Opened by Interfere agent</span><span>·</span><span class="branch">interfere/prb-1-autosave</span><span>into</span><span class="branch">main</span><span>·</span><span>Fixes PRB-1</span></div>
+        </div>
+        <div class="box" style="margin:0"><p style="color:var(--fg-2)">Moves the “Saved” state behind the server response, raises the note limit to 20,000 characters, and surfaces a failed save to the host instead of hiding it. Adds two tests covering long notes and a rejected save.</p></div>
+        ${diffHTML(true)}
+      </div>
+      <aside class="ho-side">
+        ${verified?`<div class="vcard">
+          <div class="vcard-h">${ic('shield',16)}Verified for users</div>
+          <p>Jordan Lee (Support) repeated Maya's session on the preview. The long note survived a refresh.</p>
+          ${S.verifierNote?`<div class="quote">“${esc(S.verifierNote)}”</div>`:''}
+          <ul>
+            <li>${ic('check',13,2.4)}Pasted ${fmt(NOTE_LEN)} characters</li>
+            <li>${ic('check',13,2.4)}“Saved” appeared after the server confirmed</li>
+            <li>${ic('check',13,2.4)}Refreshed and the note was intact</li>
+            <li>${ic('clock',13)}<span>Check recording · ${S.checkTime}</span></li>
+          </ul>
+        </div>`:`<div class="scard"><h4>Verification</h4><p style="margin:0;color:var(--fg-2)">Not verified for users yet. <button data-go="verify" style="color:var(--ok)">Verify it first</button></p></div>`}
+        <div class="scard">
+          <h4>Agent</h4>
+          <div class="kv"><span>Confidence</span><b>High</b></div>
+          <div class="kv"><span>Reproduced before fix</span><b>3 of 3 runs</b></div>
+          <div class="kv"><span>Reproduced after fix</span><b>0 of 3 runs</b></div>
+        </div>
+        <div class="scard">
+          <h4>Checks</h4>
+          <div class="kv"><span>${ic('test',13)} Tests</span><b style="color:var(--ok)">2 added · passing</b></div>
+          <div class="kv"><span>Type check</span><b style="color:var(--ok)">Passing</b></div>
+          <div class="kv"><span>Preview build</span><b style="color:var(--ok)">Ready</b></div>
+        </div>
+        <div class="merge">
+          <button class="btn primary" data-act="merge" ${verified?'':'disabled'}>${ic('merge',14)}Approve and merge <kbd>M</kbd></button>
+          <button class="btn" data-toast="Changes requested. The agent will revise the PR.">Request changes</button>
+        </div>
+        <p style="margin:0;color:var(--fg-3);font-size:12px">You review the code. Whether it works for users has already been checked.</p>
+      </aside>
+    </div>`;
+  }
+};
+function card(p){
+  const live=p.id==='PRB-1';
+  let extra='';
+  if(live && S.status==='ready') extra=`<span class="chip ok"><span class="dot pulse"></span>Fix ready · Preview live</span>`;
+  if(live && S.status==='verified') extra=`<span class="chip ok">${ic('shield',12)}Verified · awaiting merge</span>`;
+  if(live && S.status==='broken') extra=`<span class="chip bad">Sent back to agent</span>`;
+  if(live && S.status==='recovery') extra=`<span class="chip rec">0 new since deploy</span>`;
+  return `<button class="card ${live&&S.status!=='recovery'?'live':''}" ${live?'data-go="problem"':`data-toast="Open PRB-1 for the concept flow"`}>
+    <div class="card-id"><span>${p.id}</span>${ic('user',13)}</div>
+    <div class="card-t">${bug(C[p.c])}<span>${p.title}</span></div>
+    <div class="chips"><span class="chip">${ic('bars',12)}${p.pri}</span><span class="chip tab">${ic('users',12)}${p.users}</span><span class="chip tab">${ic('card',12)}${p.arr}</span>${extra}</div>
+  </button>`;
+}
+function diffHTML(full){
+  const k=s=>`<span class="tk-k">${s}</span>`, f=s=>`<span class="tk-f">${s}</span>`, s=x=>`<span class="tk-s">${x}</span>`, n=x=>`<span class="tk-n">${x}</span>`, c=x=>`<span class="tk-c">${x}</span>`;
+  const files=[
+    {name:'apps/web/lib/notes/autosave.ts', add:4, del:2, lines:[
+      ['',41,`${k('export async function')} ${f('saveNote')}(note, body) {`],
+      ['',42,`  ${f('setStatus')}(${s('"saving"')});`],
+      ['del',43,`  ${f('setStatus')}(${s('"saved"')});`],
+      ['del',44,`  ${k('await')} api.${f('saveNote')}(note.id, body);`],
+      ['add',43,`  ${k('const')} res = ${k('await')} api.${f('saveNote')}(note.id, body);`],
+      ['add',44,`  ${k('if')} (!res.ok) {`],
+      ['add',45,`    ${k('return')} ${f('setStatus')}(${s('"error"')}, res.error);`],
+      ['add',46,`  }`],
+      ['add',47,`  ${f('setStatus')}(${s('"saved"')});`],
+      ['',48,`}`],
+    ]},
+    {name:'apps/api/routes/notes.ts', add:1, del:1, lines:[
+      ['',17,`${k('const')} NoteBody = z.${f('object')}({`],
+      ['del',18,`  body: z.${f('string')}().${f('max')}(${n('2000')}),`],
+      ['add',18,`  body: z.${f('string')}().${f('max')}(${n('20000')}), ${c('// long session notes')}`],
+      ['',19,`});`],
+    ]},
+  ];
+  return files.map(fl=>`<div class="code"><div class="code-h"><span class="ts">TS</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fl.name}</span><span class="stat"><i style="color:var(--ok)">+${fl.add}</i> <i style="color:var(--bad)">−${fl.del}</i></span></div>
+    <div class="code-scroll"><table>${fl.lines.map(([t,ln,code])=>`<tr class="${t}"><td class="n">${ln}</td><td>${t==='del'?'- ':t==='add'?'+ ':'  '}${code}</td></tr>`).join('')}</table></div></div>`).join('');
+}
+function drawChart(el){
+  const data=[2,3,1,4,3,5,2,4,6,3,5,4,7,5,3,6,4,5,8,6,4,5,6];
+  const W=520,H=150,L=26,R=8,T=12,B=24,max=10;
+  const x=i=>L+i*(W-L-R)/(data.length-1), y=v=>T+(1-v/max)*(H-T-B);
+  const line=data.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const area=`${line}L${x(data.length-1)},${y(0)}L${x(0)},${y(0)}Z`;
+  const grid=[0,5,10].map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(v)+3.5}" text-anchor="end" font-size="10" fill="var(--fg-3)" font-family="Inter,sans-serif">${v}</text>`).join('');
+  const labels=[[0,'Oct 19'],[11,'Oct 30'],[22,'Nov 10']].map(([i,t])=>`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?'start':i===22?'end':'middle'}" font-size="10" fill="var(--fg-3)" font-family="Inter,sans-serif">${t}</text>`).join('');
+  const rec=S.status==='recovery';
+  const mark=rec?`<line x1="${x(22)}" x2="${x(22)}" y1="${T-4}" y2="${y(0)}" stroke="var(--rec)" stroke-dasharray="3 3"/><text x="${x(22)-6}" y="${T+6}" text-anchor="end" font-size="10" fill="var(--rec)" font-family="Inter,sans-serif">Fix deployed</text>`:'';
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily occurrences from Oct 19 to Nov 10, between 1 and 8 per day">
+    <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f08b85" stop-opacity=".35"/><stop offset="1" stop-color="#ef6480" stop-opacity="0"/></linearGradient></defs>
+    ${grid}<path d="${area}" fill="url(#g)"/><path d="${line}" fill="none" stroke="var(--bad)" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle cx="${x(22)}" cy="${y(data[22])}" r="3" fill="var(--bad)"/>${labels}${mark}</svg>
+    <div class="chart-legend"><span><span class="dot" style="color:var(--bad)"></span>Occurrences per day</span><span class="tab">104 total</span></div>`;
+}
+function renderBroken(){
+  const slot=$('#broken-slot'); if(!slot) return;
+  slot.innerHTML = S.brokenOpen ? `<div class="broken">
+      <label for="broken-note">What did you see?</label>
+      <textarea id="broken-note" placeholder="For example: the note came back, but the last two paragraphs were missing.">${esc(S.verifierNote)}</textarea>
+      <div class="row"><button class="btn ghost" data-act="cancel-broken">Cancel <kbd>Esc</kbd></button><button class="btn danger" data-act="send-broken">Send back to agent</button></div>
+    </div>` : '';
+  if(S.brokenOpen) setTimeout(()=>$('#broken-note')?.focus(),20);
+}
+function elapsed(){const s=Math.max(0,Math.round((Date.now()-S.verifyStart)/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
+
+/* ---------- chrome ---------- */
+function crumbs(h){$('#crumbs').innerHTML=h;}
+function actions(h){$('#actions').innerHTML=h;}
+function renderSide(){
+  $('#side-probs').innerHTML=SIDE_ORDER.map(id=>{const p=PROBLEMS.find(x=>x.id===id);const on=id==='PRB-1'&&['problem','verify','handoff'].includes(S.view);
+    return `<button class="prob ${on?'on':''}" ${id==='PRB-1'?'data-go="problem"':'data-toast="Open PRB-1 for the concept flow"'}>${bug(C[p.c])}<span>${p.side}</span></button>`;}).join('');
+  $('#nav-inbox').classList.toggle('on',S.view==='inbox');
+  const eng=S.view==='handoff';
+  $('#persona').innerHTML=`<span class="av ${eng?'s':'j'}">${eng?'SO':'JL'}</span><div class="who"><b>${eng?'Sam Ortiz':'Jordan Lee'}</b><small>Viewing as ${eng?'engineer':'support'}</small></div>`;
+}
+const GUIDE=[
+  {v:'inbox',   t:'Inbox',          d:'A new “Ready to verify” column. Fixes wait here for a teammate.'},
+  {v:'problem', t:'Problem',        d:'The 10-second moment, impact, and a plain root cause. Code stays one click away.'},
+  {v:'verify',  t:'Verify the fix', d:'Repeat what the user did on the preview. The checklist ticks itself off.'},
+  {v:'handoff', t:'Engineer review',d:'Code review with the user check attached. Merge, then watch recovery.'},
+];
+function renderGuide(){
+  $('#guide-side').innerHTML=`<div class="gs" role="complementary" aria-label="Concept walkthrough">
+    <div class="gs-h"><span class="guide-mark">${ic('shield',14)}</span><div><b>Verify the fix</b><small>Concept for Interfere by Avto Grigolia</small></div></div>
+    <div class="gs-steps">${GUIDE.map((s,i)=>`<button class="gstep ${S.view===s.v?'on':''}" data-go="${s.v}"><span class="num">${i+1}</span><span><b>${s.t}</b><small>${s.d}</small></span></button>`).join('')}</div>
+    <div class="gs-foot"><span>Sample data</span><button data-act="reset">Reset demo</button></div>
+  </div>`;
+  $('#guide').innerHTML=`<nav class="gbar" aria-label="Concept walkthrough">${GUIDE.map((s,i)=>`<button class="gstep ${S.view===s.v?'on':''}" data-go="${s.v}"><span class="num">${i+1}</span><b>${['Inbox','Problem','Verify','Review'][i]}</b></button>`).join('')}</nav>`;
+}
+function go(v, push=true){
+  if(!views[v]) v='inbox';
+  if(cleanup){cleanup();cleanup=null;}
+  if(v==='verify' && S.status!=='ready'){ S.preview=null; S.verifyStart=0; S.brokenOpen=false; }
+  S.view=v;
+  if(push && location.hash!=='#'+v) history.replaceState(null,'','#'+v);
+  cleanup=views[v]()||null;
+  $('#content').scrollTop=0;
+  renderSide(); renderGuide();
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]'); if(g){e.preventDefault();go(g.dataset.go);return;}
+  const t=e.target.closest('[data-toast]'); if(t){toast(t.dataset.toast);return;}
+  const tg=e.target.closest('[data-toggle]'); if(tg){const el=document.getElementById(tg.dataset.toggle);el.hidden=!el.hidden;tg.setAttribute('aria-expanded',String(!el.hidden));return;}
+  if(e.target.closest('[data-copy]')){const txt=$('#draft').textContent;navigator.clipboard?.writeText(txt).then(()=>toast('Copied draft'),()=>{const r=document.createRange();r.selectNodeContents($('#draft'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Draft selected. Press ⌘C to copy');});return;}
+  const a=e.target.closest('[data-act]'); if(!a) return; act(a.dataset.act);
+});
+function act(k){
+  if(k==='fixed'){ S.checkTime=elapsed(); S.status='verified'; toast('Marked fixed for users. Sam will review the code.'); go('handoff'); }
+  if(k==='broken'){ S.brokenOpen=true; renderBroken(); }
+  if(k==='cancel-broken'){ S.brokenOpen=false; renderBroken(); }
+  if(k==='send-broken'){ S.verifierNote=($('#broken-note')?.value||'').trim(); S.checkTime=elapsed(); S.status='broken'; S.brokenOpen=false; toast('Sent back to the agent with your note'); go('problem'); }
+  if(k==='merge' && S.status==='verified'){ S.status='recovery'; toast('Merged #482. Deploying to production.'); go('problem'); }
+  if(k==='reset'){ Object.assign(S,{status:'ready',verifyStart:0,checkTime:'0:00',verifierNote:'',brokenOpen:false,preview:null}); go('inbox'); toast('Demo reset'); }
+}
+document.addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  const typing=/TEXTAREA|INPUT/.test(document.activeElement?.tagName);
+  if(e.key==='Escape' && S.brokenOpen){S.brokenOpen=false;renderBroken();return;}
+  if(typing) return;
+  const key=e.key.toLowerCase();
+  if(S.view==='verify'){ if(key==='f'){e.preventDefault();act('fixed');} if(key==='b'){e.preventDefault();act('broken');} }
+  if(S.view==='problem' && key==='v' && S.status==='ready'){e.preventDefault();go('verify');}
+  if(S.view==='handoff' && key==='m'){e.preventDefault();act('merge');}
+});
+window.addEventListener('hashchange',()=>{const v=location.hash.slice(1); if(v!==S.view && views[v]) go(v,false);});
+window.addEventListener('resize',()=>{});
+
+go(views[location.hash.slice(1)]?location.hash.slice(1):'inbox', false);
+</script>
+
+</body>
+</html>
