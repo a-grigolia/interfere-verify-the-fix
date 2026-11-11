@@ -21,15 +21,3 @@ The agent finds the bug and writes the fix. Before it goes to engineering, someo
 2. **Problem.** They watch the few seconds where the customer hit the bug.
 3. **Verify.** They repeat what the customer did on a preview with the fix, and mark it Fixed or Still broken.
 4. **Engineer review.** The engineer gets the code with that check attached, and merges.
-
-## Run it
-
-```bash
-npm run dev    # http://localhost:3001
-```
-
-It's one static page with mock data. No build step, no backend.
-
-## Credits
-
-Interfere's name, demo world, and icons belong to Interfere. This is a concept made for them, not affiliated with or endorsed by them. Paper Mono (Paper) and Inter (Rasmus Andersson) are under the SIL Open Font License.
