@@ -1,0 +1,9 @@
+{
+  "name": "interfere-verify-the-fix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Verify the fix: a clickable concept for Interfere. Static files, no dependencies.",
+  "scripts": {
+    "dev": "python3 -m http.server 3001 --bind 127.0.0.1"
+  }
+}
