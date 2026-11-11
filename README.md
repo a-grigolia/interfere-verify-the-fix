@@ -10,13 +10,13 @@ It's one static page with no build step and no backend. Everything runs on mock 
 
 **The agent finds and fixes it. A teammate confirms users can actually do the thing again. The engineer merges with confidence.**
 
-Interfere already does the hard part. It watches sessions, groups occurrences into problems, finds the root cause, and drafts a fix. But between "the agent wrote a fix" and "users are unblocked," there's a gap nobody owns.
+Interfere already does the hard part. It watches sessions, groups occurrences into problems, finds the root cause, and drafts a fix. What I couldn't find, in the docs or the product demo, is who owns the step between "the agent wrote a fix" and "users are unblocked." This concept is my take on that step: a visual way for someone who doesn't read code to look at the problem, try the fix, and pass it to engineering.
 
-- **The engineer** can review the code, but code review answers "is this correct," not "did this fix what Maya hit."
-- **At a startup, the person who heard the complaint** is usually support, a PM, or a founder. They can't read the diff, but they're the best person to say whether the experience works again.
+- **The engineer** can review the code, but code review answers "is this correct," not "did this fix what the user hit."
+- **The person who heard the complaint** is usually a customer service agent, a PM, or a designer. They can't read the diff, but they're the best person to say whether the experience works again.
 - **The session replay already exists.** That's the evidence. The missing piece is a structured way to repeat what the user did on a preview with the fix, and record the result.
 
-So the idea is a **"Ready to verify" status** on problems in the existing Needs attention column, between Active and In recovery:
+So the idea is a **"Ready to verify" status** on a problem, shown here on PRB-1's card in the Needs attention column:
 
 1. The agent ships a fix to a preview deploy (Vercel preview URLs make this nearly free).
 2. A non-engineer opens the problem, watches the 10-second moment the user hit the bug, then repeats it on the preview, side by side.
@@ -30,6 +30,15 @@ So the idea is a **"Ready to verify" status** on problems in the existing Needs 
 - **Not session replay as the home screen.** Sessions are evidence, not the entry point. The problem view shows only the moment that matters, with the full session one click away.
 - **Not auto-deploy before review.** The agent opens a PR. An engineer merges it. Verification happens on a preview, never in production.
 
+### What I assumed
+
+I worked from Interfere's public docs and a recorded product demo, not from the product itself. So this rests on a few guesses:
+
+- **The step is open.** I didn't see anything that covers "a non-engineer confirms the fix works for users." If it already exists, read this as one take on it.
+- **Needs attention.** I don't know what that column covers. PRB-1 sits there in the demo, so I left it there and added Ready to verify as a status on the card. The idea doesn't depend on the column.
+- **Previews and PRs.** The demo shows the agent's suggested fix as a diff. I assumed that fix can also go to a preview deploy and be opened as a PR, because the verify step needs something to click through and the merge gate needs something to merge.
+- **The data.** PRB-1's title and the figures on its card come from the demo. The rest of its story here is mock data; see "What's real and what's mocked" below.
+
 ---
 
 ## Walkthrough
@@ -38,7 +47,7 @@ The sidebar has a 4-step guide (a bottom bar on mobile). Every view also has a U
 
 | Step | Hash | What it shows |
 |---|---|---|
-| 1. Inbox | `#inbox` | The board as it is today: Active, Needs attention, In recovery. PRB-1 is waiting in Needs attention with a new **Ready to verify** status: "Ready to verify · Preview live." |
+| 1. Inbox | `#inbox` | The board as the demo shows it: Active, Needs attention, In recovery. PRB-1 is waiting in Needs attention with a new **Ready to verify** status: "Ready to verify · Preview live." |
 | 2. Problem | `#problem` | The app's own layout: properties, dates, counts, and the occurrences chart on the left; activity on the right. Above the timeline, a looping replay of Maya pasting a long note, seeing "Saved," refreshing, and losing it. Then a plain-language root cause and the suggested fix, with the fix card and the diff open. While a fix is waiting, "Verify fix" is also in the top bar. |
 | 3. Verify | `#verify` | Maya's session on the left, a **working** preview with the fix on the right. Paste, save, and refresh for real. The checklist ticks itself off. `F` = Fixed for users, `B` = Still broken. |
 | 4. Engineer review | `#handoff` | The PR diff with a "Verified for users" card, agent confidence, and checks. Merge is disabled until someone verifies. `M` = Approve and merge. |
@@ -77,7 +86,7 @@ I picked it because anyone can verify it without reading code: paste, save, refr
 
 ## Design notes
 
-**Styling comes from Interfere's public docs** (interfere.com/docs, which share the app's sidebar). I read the computed styles and theme tokens from that page:
+**Styling comes from Interfere's public docs** (interfere.com/docs). I read the computed styles and theme tokens from that page:
 
 | Token | Value | Source |
 |---|---|---|
